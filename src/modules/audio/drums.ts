@@ -132,23 +132,34 @@ function velocityToDb(velocity: number): number {
   return 20 * Math.log10(Math.max(0.01, velocity));
 }
 
+function filterHitsByComplexity(hits: Hit[], complexity: number): Hit[] {
+  const threshold = 1 - complexity;
+  return hits.filter((h) => h.velocity >= threshold);
+}
+
 export async function scheduleDrumBar(
   pattern: DrumPatternId,
   barStartTime: number,
   secPerBeat: number,
+  complexity = 0.6,
+  volume = 0.7,
 ): Promise<void> {
   const k = await ensureDrums();
-  const hits = PATTERNS[pattern];
+  const baseHits = PATTERNS[pattern];
+  const hits = filterHitsByComplexity(baseHits, complexity);
+  const volScale = 0.3 + volume * 0.9;
+
   for (const h of hits) {
     const time = barStartTime + h.beat * 0.5 * secPerBeat;
+    const vel = Math.min(1, h.velocity * volScale);
     if (h.instrument === 'kick') {
-      k.kickVolume.volume.setValueAtTime(-4 + velocityToDb(h.velocity), time);
+      k.kickVolume.volume.setValueAtTime(-4 + velocityToDb(vel), time);
       k.kick.start(time);
     } else if (h.instrument === 'snare') {
-      k.snareVolume.volume.setValueAtTime(-6 + velocityToDb(h.velocity), time);
+      k.snareVolume.volume.setValueAtTime(-6 + velocityToDb(vel), time);
       k.snare.start(time);
     } else {
-      k.hihat.triggerAttackRelease('C5', '32n', time, h.velocity);
+      k.hihat.triggerAttackRelease('C5', '32n', time, vel);
     }
   }
 }

@@ -7,13 +7,18 @@ export type DrumPatternId = 'pop' | 'rock' | 'ballad' | 'folk' | 'jazz';
 export type TrackConfig = {
   chord: { enabled: boolean; instrument: InstrumentId; rhythm: ChordRhythm };
   bass: { enabled: boolean };
-  drum: { enabled: boolean; pattern: DrumPatternId };
+  drum: {
+    enabled: boolean;
+    pattern: DrumPatternId;
+    complexity: number;
+    volume: number;
+  };
 };
 
 export const DEFAULT_TRACK_CONFIG: TrackConfig = {
   chord: { enabled: true, instrument: 'piano', rhythm: 'sustain' },
   bass: { enabled: true },
-  drum: { enabled: true, pattern: 'pop' },
+  drum: { enabled: true, pattern: 'pop', complexity: 0.6, volume: 0.7 },
 };
 
 export const CHORD_RHYTHMS: { id: ChordRhythm; name: string; description: string }[] = [

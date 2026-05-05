@@ -8,16 +8,17 @@ import type {
 } from './types';
 import { theoryAdvisor } from './theory-advisor';
 import { genreAdvisor } from './genre-advisor';
+import { famousAdvisor } from './famous-advisor';
 
 export type { Advisor, AdvisorMeta, AdvisorId, Recommendation, RecommendationContext, Badge } from './types';
 
-export const ADVISORS: Advisor[] = [theoryAdvisor, genreAdvisor];
+export const ADVISORS: Advisor[] = [theoryAdvisor, genreAdvisor, famousAdvisor];
 
 export const ADVISOR_PANEL: AdvisorMeta[] = [
   theoryAdvisor.meta,
   genreAdvisor.meta,
+  famousAdvisor.meta,
   { id: 'emotion', name: '감정위원', shortName: '감정', active: false },
-  { id: 'famous', name: '명곡위원', shortName: '명곡', active: false },
 ];
 
 export type Candidate = {

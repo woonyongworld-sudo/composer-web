@@ -93,6 +93,11 @@ export function suggestKeyFromMood(mood: Mood): Key {
   };
 }
 
+export function scaleNotes(key: Key): Note[] {
+  const scale = key.mode === 'major' ? MAJOR_SCALE_STEPS : NATURAL_MINOR_STEPS;
+  return scale.map((step) => transpose(key.tonic, step));
+}
+
 export function bpmFromMood(mood: Mood): number {
   return Math.round(60 + mood.energy * 80);
 }

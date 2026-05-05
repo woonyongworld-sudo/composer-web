@@ -5,6 +5,7 @@ export {
   chordName,
   keyDisplay,
   chordToNoteNames,
+  scaleNotes,
   suggestKeyFromMood,
   bpmFromMood,
   ALL_KEYS,

@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import MoodSlider from '@/components/MoodSlider';
 import ChordCandidate from '@/components/ChordCandidate';
+import PianoDiagram from '@/components/PianoDiagram';
 import TrackPanel from '@/components/TrackPanel';
 import { ADVISOR_PANEL, getCandidates } from '@/modules/advisors';
 import {
@@ -11,6 +12,7 @@ import {
   chordName,
   diatonicChord,
   keyDisplay,
+  scaleNotes,
   suggestKeyFromMood,
 } from '@/modules/music/theory';
 import type {
@@ -24,6 +26,7 @@ import type {
 import {
   DEFAULT_TRACK_CONFIG,
   buildSongSections,
+  exportProgressionToMidi,
   playArrangement,
   playChord,
   playSections,
@@ -283,6 +286,13 @@ function Compose({
   const [maxLength, setMaxLength] = useState(4);
   const [trackConfig, setTrackConfig] = useState<TrackConfig>(DEFAULT_TRACK_CONFIG);
   const [busy, setBusy] = useState<null | 'loading' | 'playing'>(null);
+  const [loopEnabled, setLoopEnabled] = useState(false);
+  const loopRef = useRef(false);
+  const stoppedRef = useRef(false);
+
+  useEffect(() => {
+    loopRef.current = loopEnabled;
+  }, [loopEnabled]);
 
   useEffect(() => {
     setInstrument(trackConfig.chord.instrument);
@@ -320,17 +330,37 @@ function Compose({
     estimatedSec: number,
   ) => {
     if (busy) return;
+    stoppedRef.current = false;
     setBusy('loading');
     try {
       await play();
       setBusy('playing');
-      window.setTimeout(() => {
-        setBusy((b) => (b === 'playing' ? null : b));
-      }, estimatedSec * 1000);
+      const tick = () => {
+        if (stoppedRef.current) {
+          setBusy(null);
+          return;
+        }
+        if (loopRef.current) {
+          play()
+            .then(() => window.setTimeout(tick, estimatedSec * 1000))
+            .catch((e) => {
+              console.error(e);
+              setBusy(null);
+            });
+        } else {
+          setBusy(null);
+        }
+      };
+      window.setTimeout(tick, estimatedSec * 1000);
     } catch (e) {
       console.error(e);
       setBusy(null);
     }
+  };
+
+  const stop = () => {
+    stoppedRef.current = true;
+    setLoopEnabled(false);
   };
 
   const playFull = () =>
@@ -362,6 +392,19 @@ function Compose({
     const a = document.createElement('a');
     a.href = url;
     a.download = `progression-${Date.now()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadMidi = () => {
+    const bytes = exportProgressionToMidi(progression, bpm, trackConfig);
+    const blob = new Blob([bytes as BlobPart], { type: 'audio/midi' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `composition-${Date.now()}.mid`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -401,6 +444,25 @@ function Compose({
           </button>
         </div>
       </header>
+
+      <section className="flex flex-wrap items-center gap-4 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+        <div>
+          <div className="text-xs font-semibold text-slate-500">
+            {keyDisplay(setup.key)} 스케일
+          </div>
+          <div className="mt-0.5 text-sm font-mono text-slate-700">
+            {scaleNotes(setup.key).join(' · ')}
+          </div>
+        </div>
+        <div className="ml-auto">
+          <PianoDiagram
+            octaves={1}
+            startOctave={4}
+            scale={{ notes: scaleNotes(setup.key), color: 'amber' }}
+            size="md"
+          />
+        </div>
+      </section>
 
       <TrackPanel config={trackConfig} onChange={setTrackConfig} />
 
@@ -450,6 +512,25 @@ function Compose({
           >
             ▶ 곡으로 듣기 (~1분)
           </button>
+          <button
+            onClick={() => setLoopEnabled((v) => !v)}
+            className={`rounded-lg border px-4 py-2 text-sm font-medium transition ${
+              loopEnabled
+                ? 'border-indigo-300 bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
+                : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+            }`}
+            title="켜져 있으면 재생이 끝난 뒤 자동으로 다시 처음부터 재생돼요"
+          >
+            🔁 반복 {loopEnabled ? 'ON' : 'OFF'}
+          </button>
+          {busy === 'playing' && (
+            <button
+              onClick={stop}
+              className="rounded-lg border border-rose-300 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100"
+            >
+              ⏹ 정지
+            </button>
+          )}
           <button
             onClick={undo}
             disabled={progression.length <= 1 || busy !== null}
@@ -520,8 +601,17 @@ function Compose({
           onClick={download}
           disabled={progression.length < 2}
           className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-40"
+          title="텍스트 파일로 코드 진행 정보 저장"
         >
-          진행 다운로드
+          진행 다운로드 (.txt)
+        </button>
+        <button
+          onClick={downloadMidi}
+          disabled={progression.length < 2}
+          className="rounded-lg border border-indigo-300 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 disabled:opacity-40"
+          title="Logic / GarageBand / Ableton 같은 DAW로 가져갈 수 있는 MIDI 파일"
+        >
+          MIDI 내보내기 (.mid)
         </button>
       </section>
     </main>

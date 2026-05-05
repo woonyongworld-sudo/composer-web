@@ -21,6 +21,7 @@ export {
   DEFAULT_TRACK_CONFIG,
   buildSongSections,
 } from './types';
+export { exportProgressionToMidi } from './midi';
 
 let started = false;
 let currentInstrument: InstrumentId = 'piano';
@@ -97,7 +98,15 @@ export async function playSections(
         tasks.push(scheduleBassBar(chord, barStart, secPerBeat));
       }
       if (cfg.drum.enabled) {
-        tasks.push(scheduleDrumBar(cfg.drum.pattern, barStart, secPerBeat));
+        tasks.push(
+          scheduleDrumBar(
+            cfg.drum.pattern,
+            barStart,
+            secPerBeat,
+            cfg.drum.complexity,
+            cfg.drum.volume,
+          ),
+        );
       }
       barIdx++;
     }

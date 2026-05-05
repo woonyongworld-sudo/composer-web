@@ -107,6 +107,26 @@ export default function TrackPanel({ config, onChange }: Props) {
               </option>
             ))}
           </select>
+          <div className="flex w-full flex-col gap-1.5 pt-1">
+            <DrumSlider
+              label="단순함"
+              rightLabel="복잡함"
+              value={config.drum.complexity}
+              disabled={!config.drum.enabled}
+              onChange={(v) =>
+                update({ drum: { ...config.drum, complexity: v } })
+              }
+            />
+            <DrumSlider
+              label="조용함"
+              rightLabel="시끄러움"
+              value={config.drum.volume}
+              disabled={!config.drum.enabled}
+              onChange={(v) =>
+                update({ drum: { ...config.drum, volume: v } })
+              }
+            />
+          </div>
         </TrackRow>
 
         <TrackRow icon="🎵" name="멜로디" enabled={false} disabled>
@@ -114,6 +134,36 @@ export default function TrackPanel({ config, onChange }: Props) {
         </TrackRow>
       </div>
     </section>
+  );
+}
+
+function DrumSlider({
+  label,
+  rightLabel,
+  value,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  rightLabel: string;
+  value: number;
+  disabled?: boolean;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <div className="flex items-center gap-2 text-xs">
+      <span className="w-12 shrink-0 text-right text-slate-500">{label}</span>
+      <input
+        type="range"
+        min={0}
+        max={100}
+        value={Math.round(value * 100)}
+        disabled={disabled}
+        onChange={(e) => onChange(Number(e.target.value) / 100)}
+        className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-slate-200 accent-indigo-600 disabled:opacity-50"
+      />
+      <span className="w-14 shrink-0 text-slate-500">{rightLabel}</span>
+    </div>
   );
 }
 

@@ -2,8 +2,9 @@
 
 import type { AdvisorId, Recommendation } from '@/modules/advisors';
 import { ADVISOR_PANEL } from '@/modules/advisors';
-import { chordName } from '@/modules/music/theory';
+import { chordName, chordToNoteNames } from '@/modules/music/theory';
 import type { Chord } from '@/modules/music/types';
+import PianoDiagram from './PianoDiagram';
 
 type Props = {
   chord: Chord;
@@ -13,12 +14,19 @@ type Props = {
 };
 
 export default function ChordCandidate({ chord, perAdvisor, onPreview, onPick }: Props) {
+  const chordNotes = chordToNoteNames(chord, 4);
   return (
     <div className="flex flex-col rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
-      <div className="flex items-center justify-center border-b border-slate-100 bg-gradient-to-b from-slate-50 to-white py-6">
+      <div className="flex flex-col items-center gap-2 border-b border-slate-100 bg-gradient-to-b from-slate-50 to-white px-4 py-5">
         <span className="text-4xl font-bold tracking-tight text-slate-900">
           {chordName(chord)}
         </span>
+        <PianoDiagram
+          octaves={1}
+          startOctave={4}
+          highlight={{ notes: chordNotes, color: 'indigo' }}
+          size="sm"
+        />
       </div>
       <div className="flex-1 space-y-3 p-4 text-sm">
         {ADVISOR_PANEL.map((advisor) => {
